@@ -6,9 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "streamlit>=1.20.0",
-        "pandas>=1.3.0",
-        "sqlite3",
-        "toml",
+        "pandas>=1.3.0"
     ],
     author="MDGL",
     description="A Streamlit application for tracking operator rounds in industrial facilities",
