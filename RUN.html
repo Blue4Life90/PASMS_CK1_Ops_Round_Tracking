@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Your Refactored Operator Rounds Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: Consolas, monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Running Your Refactored Operator Rounds Application</h1>
+    <p>To run your newly refactored Operator Rounds Tracking application, follow these steps:</p>
+
+    <h2>Step 1: Organizing Your Project Files</h2>
+    <p>Ensure your project directory is structured as follows:</p>
+    <pre><code>operator_rounds/
+├── __init__.py
+├── app.py
+├── config.py
+├── database/
+│   ├── __init__.py
+│   ├── connection.py
+│   ├── schema.py
+│   ├── queries.py
+│   └── models.py
+├── ui/
+│   ├── __init__.py
+│   ├── sidebar.py
+│   ├── round_completion.py
+│   ├── section_editor.py
+│   ├── view_rounds.py
+│   └── forms.py
+└── utils/
+    ├── __init__.py
+    ├── validation.py
+    ├── state.py
+    ├── export.py
+    └── helpers.py</code></pre>
+
+    <h2>Step 2: Creating a Setup File</h2>
+    <p>Create a <code>setup.py</code> file in the parent directory:</p>
+    <pre><code>from setuptools import setup, find_packages
+
+setup(
+    name="operator_rounds",
+    version="1.0.0",
+    packages=find_packages(),
+    install_requires=[
+        "streamlit>=1.20.0",
+        "pandas>=1.3.0",
+        "sqlite3",
+    ],
+)</code></pre>
+
+    <h2>Step 3: Installing Your Package</h2>
+    <p>Run the following command in your terminal:</p>
+    <pre><code>pip install -e .</code></pre>
+
+    <h2>Step 4: Running the Application</h2>
+    <p>To start your Streamlit application, run:</p>
+    <pre><code>streamlit run operator_rounds/app.py</code></pre>
+
+    <h2>Step 5: Verifying Your Application</h2>
+    <p>Ensure that everything is working correctly:</p>
+    <ul>
+        <li>Select a round type</li>
+        <li>Enter operator information</li>
+        <li>Add sections and items</li>
+        <li>Complete rounds</li>
+        <li>View previous rounds</li>
+    </ul>
+
+    <h2>Troubleshooting Common Issues</h2>
+    <h3>Module Import Errors</h3>
+    <p><strong>Problem:</strong> <code>ModuleNotFoundError: No module named 'operator_rounds'</code></p>
+    <p><strong>Solution:</strong> Ensure you've installed the package and restart your terminal.</p>
+
+    <h3>Database File Location</h3>
+    <p><strong>Problem:</strong> Database file not found</p>
+    <p><strong>Solution:</strong> Modify <code>config.py</code> to specify the database path.</p>
+
+    <h3>Streamlit State Management</h3>
+    <p><strong>Problem:</strong> UI components not updating</p>
+    <p><strong>Solution:</strong> Use <code>st.write(st.session_state)</code> to debug.</p>
+
+    <h2>Advanced Running Options</h2>
+    <pre><code># Run on a specific port
+streamlit run operator_rounds/app.py --server.port 8501
+
+# Allow external connections
+streamlit run operator_rounds/app.py --server.address 0.0.0.0
+
+# Increase memory limit
+streamlit run operator_rounds/app.py --server.maxUploadSize 200</code></pre>
+
+    <h2>Development Workflow</h2>
+    <p>Follow these steps when making changes:</p>
+    <ol>
+        <li>Edit the relevant file(s)</li>
+        <li>Save changes</li>
+        <li>Streamlit will auto-reload the UI</li>
+        <li>Refresh manually if needed</li>
+    </ol>
+
+    <h2>Creating a Production Deployment</h2>
+    <p>Before deploying, ensure:</p>
+    <ul>
+        <li>Debug toggles are removed</li>
+        <li>Environment variables are used for sensitive configurations</li>
+        <li>Database backups are in place</li>
+        <li>Deployment via Streamlit sharing, Docker, or hosting platforms</li>
+    </ul>
+    <p>By following these steps, you should have a fully functional application.</p>
+</body>
+</html>

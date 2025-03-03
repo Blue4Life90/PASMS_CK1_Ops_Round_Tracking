@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Walkthrough: Completing a Round in the Operator Rounds Application</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #252773;
+            border-bottom: 2px solid #FFC857;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #252773;
+            margin-top: 30px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(255, 200, 87, 0.5);
+        }
+        h3 {
+            color: #333;
+            margin-top: 25px;
+        }
+        .step {
+            margin-bottom: 30px;
+            background-color: rgba(167, 139, 250, 0.1);
+            padding: 20px;
+            border-radius: 5px;
+            border-left: 4px solid #252773;
+        }
+        .step-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+            color: #252773;
+        }
+        .step-number {
+            background-color: #252773;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 10px;
+        }
+        .description {
+            margin-bottom: 15px;
+        }
+        .behind-scenes {
+            background-color: rgba(6, 214, 160, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .behind-scenes-title {
+            font-weight: bold;
+            color: #06D6A0;
+            margin-bottom: 5px;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+            color: #333;
+        }
+        .code-block {
+            background-color: #f8f8f8;
+            border-left: 4px solid #4ADE80;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 5px 5px 0;
+            overflow-x: auto;
+            font-family: Consolas, Monaco, 'Andale Mono', monospace;
+        }
+        .user-experience {
+            background-color: rgba(255, 200, 87, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border-left: 4px solid #FFC857;
+        }
+        .user-experience-title {
+            font-weight: bold;
+            color: #805b00;
+            margin-bottom: 5px;
+        }
+        .note {
+            background-color: rgba(74, 222, 128, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Walkthrough: Completing a Round in the Operator Rounds Application</h1>
+    
+    <p>This walkthrough explains the complete process of how an operator completes a round in the application, from start to finish. It covers both what the user experiences and what's happening in the code.</p>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">1</span> Starting a Round</div>
+        
+        <div class="user-experience">
+            <div class="user-experience-title">User Experience:</div>
+            <p>When an operator decides to complete a round for a specific unit, they:</p>
+            <ol>
+                <li>Click on a unit tab to view that unit's information</li>
+                <li>Click the "Complete Round" button in the unit's interface</li>
+            </ol>
+        </div>
+        
+        <div class="behind-scenes">
+            <div class="behind-scenes-title">Behind the Scenes:</div>
+            <p>This sets <code>st.session_state.completing_round = True</code> and triggers a rerun of the Streamlit application, which causes the UI to switch to the round completion flow.</p>
+            <div class="code-block">
+if st.button("Complete Round", key=f"complete_{unit_name}", use_container_width=True):
+    if not st.session_state.operator_name:
+        st.error("Please enter operator name before starting round")
+    else:
+        st.session_state.completing_round = True
+        st.session_state.current_section = None
+        st.rerun()
+            </div>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">2</span> Initialization of Round Completion</div>
+        
+        <div class="description">
+            <p>Once the "Complete Round" button is clicked, the <code>render_round_completion()</code> function from <code>ui/round_completion.py</code> takes control:</p>
+        </div>
+        
+        <div class="code-block">
+def render_round_completion(unit):
+    # Initialize unit-specific section tracking
+    if 'unit_sections' not in st.session_state:
+        st.session_state.unit_sections = {}
+        
+    # Create tracking structure for this unit
+    if unit not in st.session_state.unit_sections:
+        st.session_state.unit_sections[unit] = {
+            'current_section': None,  # Tracks which section we're working on
+            'completed_sections': set(),  # Keeps track of finished sections
+            'last_section_data': {}  # Stores data from last form submission
+        }
+        </div>
+        
+        <div class="note">
+            <p>This code initializes the state tracking needed to guide the operator through each section of the round.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">3</span> Getting Sections for the Unit</div>
+        
+        <div class="description">
+            <p>The function then retrieves all sections for the unit from the session state:</p>
+        </div>
+        
+        <div class="code-block">
+# Get all sections for this unit from the rounds data structure
+sections = st.session_state.rounds_data[st.session_state.current_round]["units"][unit]["sections"]
+current_section = st.session_state.unit_sections[unit]['current_section']
+        </div>
+        
+        <div class="description">
+            <p>If no section is currently selected, it starts with the first section in the list:</p>
+        </div>
+        
+        <div class="code-block">
+# If no section is selected and sections exist, start with the first one
+if not current_section and sections:
+    sections_list = list(sections.keys())
+    current_section = sections_list[0]
+    st.session_state.unit_sections[unit]['current_section'] = current_section
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">4</span> Creating a New Round in the Database</div>
+        
+        <div class="description">
+            <p>If no round exists yet, it creates one:</p>
+        </div>
+        
+        <div class="code-block">
+# Create a new round if one hasn't been started
+if not hasattr(st.session_state, 'current_round_id') or not st.session_state.current_round_id:
+    round_id = start_round(unit)
+    if not round_id:
+        st.error("Failed to start round. Please ensure operator name is entered.")
+        return
+    st.session_state.current_round_id = round_id
+        </div>
+        
+        <div class="behind-scenes">
+            <div class="behind-scenes-title">Behind the Scenes:</div>
+            <p>The <code>start_round()</code> function:</p>
+            <ol>
+                <li>Finds or creates the operator in the database</li>
+                <li>Creates a new round record with the operator ID, round type, and shift</li>
+                <li>Returns the new round ID</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">5</span> Displaying the Current Section</div>
+        
+        <div class="description">
+            <p>The function shows which section the operator is currently completing:</p>
+        </div>
+        
+        <div class="code-block">
+# Display the current section header
+st.subheader(f"Completing Round: {current_section}")
+
+# Show progress indicator
+progress_text = f"Section {current_index + 1} of {len(sections_list)}"
+st.write(f"**{progress_text}**")
+st.progress((current_index + 1) / len(sections_list))
+        </div>
+        
+        <div class="user-experience">
+            <div class="user-experience-title">User Experience:</div>
+            <p>A progress bar indicates how far along they are in the round completion process.</p>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">6</span> Creating the Data Entry Form</div>
+        
+        <div class="description">
+            <p>For the current section, a form is created to collect values for each item:</p>
+        </div>
+        
+        <div class="code-block">
+# Create a unique form key for this section
+form_key = f"complete_section_{unit}_{current_section}_{current_index}".replace(" ", "_").lower()
+
+# Use session state to track form values between reruns
+form_values_key = f"form_values_{unit}_{current_section}".replace(" ", "_").lower()
+if form_values_key not in st.session_state:
+    # Initialize with current values
+    st.session_state[form_values_key] = {}
+    for item in section_data["items"]:
+        item_key = item["description"].replace(" ", "_").lower()
+        st.session_state[form_values_key][f"value_{item_key}"] = item.get("value", "")
+        st.session_state[form_values_key][f"output_{item_key}"] = item.get("output", "")
+
+# Start the form for data entry
+with st.form(form_key):
+    updated_items = []
+    
+    # Display each item in the section for data entry
+    for item in section_data["items"]:
+        st.write(f"**{item['description']}**")
+        
+        # Create unique keys for input fields
+        base_key = item['description'].replace(" ", "_").lower()
+        
+        # Create input fields for value and output
+        value_key = f"value_{base_key}"
+        output_key = f"output_{base_key}"
+        
+        # Use session state to maintain values between reruns
+        value = st.text_input(
+            "Value", 
+            value=st.session_state[form_values_key].get(value_key, item.get("value", "")),
+            key=value_key
+        )
+        
+        output = st.text_input(
+            "Output (if applicable)", 
+            value=st.session_state[form_values_key].get(output_key, item.get("output", "")),
+            key=output_key
+        )
+        
+        # Store in session state as user types
+        st.session_state[form_values_key][value_key] = value
+        st.session_state[form_values_key][output_key] = output
+        
+        # Store the updated values
+        updated_items.append({
+            "description": item["description"],
+            "value": value,
+            "output": output
+        })
+        
+        st.markdown("---")  # Visual separator between items
+    
+    # Handle navigation and form submission
+    if current_index < len(sections_list) - 1:
+        # Not the last section - show "Next Section" button
+        next_button = st.form_submit_button("Next Section", use_container_width=True)
+    else:
+        # Last section - show "Complete Round" button
+        next_button = st.form_submit_button("Complete Round", use_container_width=True)
+        </div>
+        
+        <div class="user-experience">
+            <div class="user-experience-title">User Experience:</div>
+            <p>This form shows:</p>
+            <ol>
+                <li>Each item in the section with its description</li>
+                <li>Input fields for "Value" and "Output (if applicable)" for each item</li>
+                <li>A "Next Section" button (or "Complete Round" for the final section)</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">7</span> Processing Form Submission</div>
+        
+        <div class="description">
+            <p>When the operator clicks "Next Section" or "Complete Round", the form data is processed:</p>
+        </div>
+        
+        <div class="code-block">
+# Handle form submission outside the form but in the function
+if next_button:
+    # Validate all values before saving
+    validation_errors = []
+    for item in updated_items:
+        valid, error = validate_input_data("Value", item["value"])
+        if not valid:
+            validation_errors.append(error)
+    
+    if validation_errors:
+        for error in validation_errors:
+            st.error(error)
+        return
+    
+    # Save the current section data
+    sections[current_section]["items"] = updated_items
+    save_success = save_round_section(unit, current_section, {"items": updated_items})
+    
+    if not save_success:
+        st.error("Failed to save section data")
+        return
+    
+    # Mark this section as completed
+    st.session_state.unit_sections[unit]['completed_sections'].add(current_section)
+        </div>
+        
+        <div class="behind-scenes">
+            <div class="behind-scenes-title">Behind the Scenes:</div>
+            <p>The function:</p>
+            <ol>
+                <li>Validates all input values</li>
+                <li>Updates the section data in session state</li>
+                <li>Saves the section data to the database using <code>save_round_section()</code></li>
+                <li>Marks the section as completed</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">8</span> Moving to the Next Section or Completing the Round</div>
+        
+        <div class="description">
+            <p>Depending on whether there are more sections to complete:</p>
+        </div>
+        
+        <div class="code-block">
+if current_index < len(sections_list) - 1:
+    # Move to next section
+    next_section = sections_list[current_index + 1]
+    st.session_state.unit_sections[unit]['current_section'] = next_section
+    
+    # Clear form values for the next section
+    next_form_key = f"form_values_{unit}_{next_section}".replace(" ", "_").lower()
+    if next_form_key not in st.session_state:
+        st.session_state[next_form_key] = {}
+    
+    st.success(f"Section '{current_section}' completed. Moving to '{next_section}'")
+    st.rerun()
+else:
+    # This was the last section, complete the round
+    st.session_state.completing_round = False
+    st.session_state.unit_sections[unit]['current_section'] = None
+    st.session_state.unit_sections[unit]['completed_sections'] = set()
+    
+    st.success("Round completed successfully!")
+    st.rerun()
+        </div>
+        
+        <div class="behind-scenes">
+            <div class="behind-scenes-title">Behind the Scenes:</div>
+            <p>If there are more sections:</p>
+            <ol>
+                <li>It updates the current section to the next one</li>
+                <li>Initializes form values for the next section</li>
+                <li>Shows a success message and reruns the application</li>
+            </ol>
+            <p>If this was the last section:</p>
+            <ol>
+                <li>It exits the round completion flow by setting <code>completing_round = False</code></li>
+                <li>Resets the section tracking data</li>
+                <li>Shows a success message and reruns the application</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">9</span> Behind the Scenes: Saving Section Data</div>
+        
+        <div class="description">
+            <p>The <code>save_round_section()</code> function handles the database operations:</p>
+        </div>
+        
+        <div class="code-block">
+def save_round_section(unit, section, data):
+    # Verify we have a valid round ID
+    if not st.session_state.current_round_id:
+        st.error("No active round found. Please start a new round.")
+        return False
+        
+    try:
+        with get_db_connection() as conn:
+            conn.execute("BEGIN TRANSACTION")
+            
+            # Find the section ID or create a new section
+            c.execute('''
+                SELECT id 
+                FROM sections 
+                WHERE round_id = ? AND LOWER(TRIM(unit)) = LOWER(TRIM(?))
+                AND LOWER(TRIM(section_name)) = LOWER(TRIM(?))
+            ''', (st.session_state.current_round_id, unit, section))
+            
+            section_result = c.fetchone()
+            
+            if section_result:
+                # Update existing items or add new ones
+                section_id = section_result[0]
+                # ... update existing items ...
+            else:
+                # Create a new section
+                c.execute('''
+                    INSERT INTO sections (round_id, unit, section_name)
+                    VALUES (?, ?, ?)
+                ''', (st.session_state.current_round_id, unit.strip(), section.strip()))
+                
+                section_id = c.lastrowid
+                
+                # Insert all items as new
+                for item in data["items"]:
+                    c.execute('''
+                        INSERT INTO round_items 
+                        (section_id, description, value, output)
+                        VALUES (?, ?, ?, ?)
+                    ''', (section_id, item["description"].strip(),
+                         item.get("value", "").strip(), item.get("output", "").strip()))
+            
+            # Commit changes
+            conn.commit()
+            return True
+        
+    except Exception as e:
+        # ... error handling ...
+        return False
+        </div>
+        
+        <div class="behind-scenes">
+            <div class="behind-scenes-title">Key Operations:</div>
+            <p>This function:</p>
+            <ol>
+                <li>Finds or creates a section for the current round</li>
+                <li>Updates existing items or adds new ones</li>
+                <li>Commits the changes to the database</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="step">
+        <div class="step-title"><span class="step-number">10</span> Round Data Model and Storage</div>
+        
+        <div class="description">
+            <p>After completing a round, the database contains:</p>
+            <ul>
+                <li>A record in the <code>rounds</code> table with the operator, shift, and timestamp</li>
+                <li>Multiple records in the <code>sections</code> table, one for each section in the round</li>
+                <li>Multiple records in the <code>round_items</code> table, one for each item value recorded</li>
+            </ul>
+            
+            <p>This data structure allows:</p>
+            <ul>
+                <li>Tracking which operator completed each round</li>
+                <li>Storing values and outputs for each item in each section</li>
+                <li>Retrieving historical round data for review and analysis</li>
+            </ul>
+        </div>
+        
+        <div class="note">
+            <p>The complete round represents a snapshot of equipment conditions and readings at a specific time, stored permanently in the database for reference and analysis.</p>
+        </div>
+    </div>
+
+    <h2>Summary</h2>
+    <p>This completes the round completion flow, from the operator clicking "Complete Round" to the final data being stored in the database and the application returning to the main interface.</p>
+</body>
+</html>
